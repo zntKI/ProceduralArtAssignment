@@ -8,6 +8,8 @@ using UnityEditor;
 
 public class VoronoiGeneration3D : MonoBehaviour
 {
+    [SerializeField] private GameObject cellPrefab;
+    
     // ReSharper disable Unity.PerformanceAnalysis
     /// <summary>
     /// Called when new virtual seed is added to the collection<br/>
@@ -38,30 +40,34 @@ public class VoronoiGeneration3D : MonoBehaviour
             new(-half.x,  half.z)
         };
 
-        var seeds = new List<Transform>();
-        var seeds2D = new List<Vector2>();
+        var cellsGenerated = new Dictionary<VoronoiCell, List<Vector2>>();
+        var seeds2D = new Dictionary<VoronoiCell, Vector2>();
         foreach (Transform child in transform)
         {
-            seeds.Add(child);
-            var lp = child.localPosition;
-            seeds2D.Add(new Vector2(lp.x, lp.z));
+            if (child.TryGetComponent<VoronoiCell>(out var voronoiCell))
+            {
+                cellsGenerated[voronoiCell] = new List<Vector2>();
+                var lp = child.localPosition;
+                seeds2D[voronoiCell] = new Vector2(lp.x, lp.z);
+            }
         }
-
-        var cellsGenerated = new List<List<Vector2>>();
         
-        foreach (var seed2D in seeds2D)
+        foreach (var seed2D in seeds2D.Keys)
         {
             var cellPoly = new List<Vector2>(basePoly);
             
-            foreach (var otherSeed2D in seeds2D.Where(s => s != seed2D))
+            foreach (var otherSeed2D in seeds2D.Keys.Where(s => s != seed2D))
             {
+                var seed2DPos = seeds2D[seed2D];
+                var otherSeed2DPos = seeds2D[otherSeed2D];
+                
                 // Create a bisector
-                Vector2 midpoint = (seed2D + otherSeed2D) * 0.5f;
-                Vector2 normal = (otherSeed2D - seed2D).normalized;
+                Vector2 midpoint = (seed2DPos + otherSeed2DPos) * 0.5f;
+                Vector2 normal = (otherSeed2DPos - seed2DPos).normalized;
                 float c = Vector2.Dot(normal, midpoint);
                 
-                float sideSeed = Vector2.Dot(normal, seed2D) - c;
-                float seedSideSign = Mathf.Sign(sideSeed);
+                float sideSeed = Vector2.Dot(normal, seed2DPos) - c;
+                float seedSideSign = sideSeed >= 0 ? 1f : -1f;
                 
                 var outPoly = new List<Vector2>();
 
@@ -70,13 +76,9 @@ public class VoronoiGeneration3D : MonoBehaviour
                     var p1 = cellPoly[i];
                     var p2 = cellPoly[(i + 1) % cellPoly.Count];
                     
-                    // Check if p1 is on the correct side
-                    float p1SideSign = Mathf.Sign(Vector2.Dot(normal, p1) - c);
-                    bool isP1CorrectSide = Mathf.Approximately(p1SideSign, seedSideSign);
-                    
-                    // Check if p2 is on the correct side
-                    float p2SideSign = Mathf.Sign(Vector2.Dot(normal, p2) - c);
-                    bool isP2CorrectSide = Mathf.Approximately(p2SideSign, seedSideSign);
+                    // Check if points are on the correct side
+                    bool isP1CorrectSide = seedSideSign * (Vector2.Dot(normal, p1) - c) >= -Mathf.Epsilon;
+                    bool isP2CorrectSide = seedSideSign * (Vector2.Dot(normal, p2) - c) >= -Mathf.Epsilon;
 
                     if (isP1CorrectSide && isP2CorrectSide)
                     {
@@ -131,16 +133,17 @@ public class VoronoiGeneration3D : MonoBehaviour
                 cellPoly = outPoly;
             }
             
-            cellsGenerated.Add(cellPoly);
+            cellsGenerated[seed2D] = cellPoly;
         }
 
-        foreach (var cell in cellsGenerated)
+        foreach (var cell in cellsGenerated.Keys)
         {
-            Debug.Log("Cell " + cellsGenerated.IndexOf(cell));
-            foreach (var vertex in cell)
+            List<Vector3> polyVertices3D = new List<Vector3>();
+            foreach (var polyVert in cellsGenerated[cell])
             {
-                Debug.Log($"\t{vertex}");
+                polyVertices3D.Add(new Vector3(polyVert.x, cell.transform.localPosition.y, polyVert.y) - cell.transform.localPosition);
             }
+            cell.GenerateMesh(polyVertices3D);
         }
     }
 
@@ -150,9 +153,11 @@ public class VoronoiGeneration3D : MonoBehaviour
 
     private void CreateCell(Vector3 point)
     {
-        var cell = new GameObject($"Cell{transform.childCount+1}",
-            typeof(VoronoiCell));
+        GameObject cell = Instantiate(cellPrefab);
+        // var cell = new GameObject($"Cell{transform.childCount+1}",
+        //     typeof(VoronoiCell), typeof(MeshFilter), typeof(MeshRenderer));
         cell.transform.position = point + transform.up;
+        cell.GetComponent<VoronoiCell>().Init();
         
 #if UNITY_EDITOR
         Undo.RegisterCreatedObjectUndo(cell, "Created Voronoi Cell");
