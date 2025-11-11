@@ -19,7 +19,10 @@ public class VoronoiCellSettings : ScriptableObject
 public class VoronoiCellSettingsData
 {
     public Material CellMaterial;
+    public string CellMaterialName => nameof(CellMaterial);
+    
     public float DebugSeedCubeSizeModifier;
+    public Color DebugDrawColor;
 
     public VoronoiCellSettingsData(VoronoiCellSettingsData other)
     {
@@ -30,5 +33,6 @@ public class VoronoiCellSettingsData
     {
         CellMaterial = other.CellMaterial;
         DebugSeedCubeSizeModifier = other.DebugSeedCubeSizeModifier;
+        DebugDrawColor = other.DebugDrawColor;
     }
 }

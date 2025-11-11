@@ -15,3 +15,4 @@ MonoBehaviour:
   SettingsData:
     CellMaterial: {fileID: 2100000, guid: 8fe517d9aaf38f7418b9e7c68e920a7b, type: 2}
     DebugSeedCubeSizeModifier: 0.3
+    DebugDrawColor: {r: 0, g: 0.30444098, b: 1, a: 1}
