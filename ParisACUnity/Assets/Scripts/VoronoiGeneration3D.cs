@@ -8,8 +8,6 @@ using UnityEditor;
 
 public class VoronoiGeneration3D : MonoBehaviour
 {
-    [SerializeField] private GameObject cellPrefab;
-    
     // ReSharper disable Unity.PerformanceAnalysis
     /// <summary>
     /// Called when new virtual seed is added to the collection<br/>
@@ -153,9 +151,8 @@ public class VoronoiGeneration3D : MonoBehaviour
 
     private void CreateCell(Vector3 point)
     {
-        GameObject cell = Instantiate(cellPrefab);
-        // var cell = new GameObject($"Cell{transform.childCount+1}",
-        //     typeof(VoronoiCell), typeof(MeshFilter), typeof(MeshRenderer));
+        var cell = new GameObject($"Cell{transform.childCount+1}",
+            typeof(VoronoiCell), typeof(MeshFilter), typeof(MeshRenderer));
         cell.transform.position = point + transform.up;
         cell.GetComponent<VoronoiCell>().Init();
         
