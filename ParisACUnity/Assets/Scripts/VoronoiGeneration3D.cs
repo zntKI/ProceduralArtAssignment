@@ -30,13 +30,16 @@ public class VoronoiGeneration3D : MonoBehaviour
         }
 
         var half = mesh.bounds.extents;
-        var basePoly = new List<Vector2>
+        var basePolyTemp = new List<Vector3>
         {
-            new(-half.x, -half.z),
-            new( half.x, -half.z),
-            new( half.x,  half.z),
-            new(-half.x,  half.z)
+            new(-half.x, 0f, -half.z),
+            new( half.x, 0f, -half.z),
+            new( half.x, 0f,  half.z),
+            new(-half.x, 0f,  half.z)
         };
+        basePolyTemp = basePolyTemp.Select(v => transform.TransformPoint(v)).ToList();
+
+        List<Vector2> basePoly = basePolyTemp.Select(v => new Vector2(v.x, v.z)).ToList();
 
         var cellsGenerated = new Dictionary<VoronoiCell, List<Vector2>>();
         var seeds2D = new Dictionary<VoronoiCell, Vector2>();
@@ -45,8 +48,8 @@ public class VoronoiGeneration3D : MonoBehaviour
             if (child.TryGetComponent<VoronoiCell>(out var voronoiCell))
             {
                 cellsGenerated[voronoiCell] = new List<Vector2>();
-                var lp = child.localPosition;
-                seeds2D[voronoiCell] = new Vector2(lp.x, lp.z);
+                var wp = child.position;
+                seeds2D[voronoiCell] = new Vector2(wp.x, wp.z);
             }
         }
         
@@ -139,7 +142,7 @@ public class VoronoiGeneration3D : MonoBehaviour
             List<Vector3> polyVertices3D = new List<Vector3>();
             foreach (var polyVert in cellsGenerated[cell])
             {
-                polyVertices3D.Add(new Vector3(polyVert.x, cell.transform.localPosition.y, polyVert.y) - cell.transform.localPosition);
+                polyVertices3D.Add(new Vector3(polyVert.x, cell.transform.position.y, polyVert.y));
             }
             cell.GenerateMesh(polyVertices3D);
         }
