@@ -13,9 +13,13 @@ public class VoronoiCellEditor : Editor
     private VoronoiGeneration3D _diagram;
 
     private Vector3 _lastPosition;
-
+    
     private void OnEnable()
     {
+        Tools.hidden = true;
+        if (_cell)
+            return;
+        
         _cell = (VoronoiCell)target;
         if (_cell)
         {
@@ -24,6 +28,11 @@ public class VoronoiCellEditor : Editor
         }
 
         _lastPosition = _cell ? _cell.transform.position : Vector3.zero;
+    }
+
+    private void OnDisable()
+    {
+        Tools.hidden = false;
     }
 
     public override void OnInspectorGUI()
@@ -61,7 +70,7 @@ public class VoronoiCellEditor : Editor
             if (GUILayout.Button("Change from Folder", GUILayout.ExpandWidth(true), GUILayout.MinWidth(150)))
             {
                 Object currentSettingsObj = AssetDatabase.LoadAssetAtPath<Object>(
-                    Config.CombinePaths(Config.ScriptableObjects_Path,
+                    Config.CombinePaths(Config.ScriptableObjects_Path, Config.ScriptableObjects_VoronoiCellSettingsFolder,
                         Config.ScriptableObjects_VoronoiCellSettingsDefault));
                 EditorGUIUtility.PingObject(currentSettingsObj);
             }
@@ -130,16 +139,20 @@ public class VoronoiCellEditor : Editor
     // TODO: Make it calculate only when mouse is released after moving for efficiency (if needed)
     private void DrawAndMoveCell()
     {
-        Vector3 currentPosition = _cell.transform.position;
-
-        if ((currentPosition - _lastPosition).sqrMagnitude > Mathf.Epsilon)
+        Vector3 handlePos = _cell.transform.GetChild(0).position;
+        
+        EditorGUI.BeginChangeCheck();
+        var newPos = Handles.PositionHandle(handlePos, Quaternion.identity);
+        if (EditorGUI.EndChangeCheck())
         {
+            Undo.RecordObject(_diagram, "Moved seed");
+            
+            Vector3 movement = newPos - handlePos;
+            _cell.transform.position += movement;
+
             if (!_diagram)
                 _diagram = _cell.GetComponentInParent<VoronoiGeneration3D>();
-
             _diagram.CalculateVoronoiDiagram();
-
-            _lastPosition = currentPosition;
         }
     }
 }

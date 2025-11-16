@@ -154,17 +154,16 @@ public class VoronoiGeneration3D : MonoBehaviour
 
     private void CreateCell(Vector3 point)
     {
-        var cell = new GameObject($"Cell{transform.childCount+1}",
-            typeof(VoronoiCell), typeof(MeshFilter), typeof(MeshRenderer));
-        cell.transform.position = point + transform.up;
-        cell.GetComponent<VoronoiCell>().Init();
+        var cell = new GameObject($"Voronoi Cell {transform.childCount+1}",
+            typeof(VoronoiCell), typeof(MeshFilter), typeof(MeshRenderer)).GetComponent<VoronoiCell>();
         
-#if UNITY_EDITOR
-        Undo.RegisterCreatedObjectUndo(cell, "Created Voronoi Cell");
-        Undo.SetTransformParent(cell.transform, transform, "Set Voronoi Cell Parent");
+        cell.transform.position = point + transform.up * 0.01f;
+        cell.transform.SetParent(transform);
+        
+        Undo.RegisterCreatedObjectUndo(cell.gameObject, "Created Voronoi Cell");
+        
+        cell.Init();
+        
         EditorUtility.SetDirty(this);
-#else
-        cell.transform.SetParent(this.transform);
-#endif
     }
 }

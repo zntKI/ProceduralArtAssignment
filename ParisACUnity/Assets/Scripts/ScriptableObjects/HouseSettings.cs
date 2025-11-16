@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 /// <summary>
@@ -11,5 +12,26 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "HouseSettings", menuName = "Scriptable Objects/HouseSettings")]
 public class HouseSettings : ScriptableObject
 {
+    public HouseSettingsData SettingsData;
+}
+
+[Serializable]
+public class HouseSettingsData
+{
+    // TODO: Make min and max height separate properties
+    [Range(5.0f, 10.0f)]
+    public float MinHeight;
+    [Range(5.0f, 10.0f)]
+    public float MaxHeight;
     
+    public HouseSettingsData(HouseSettingsData other)
+    {
+        Copy(other);
+    }
+
+    public void Copy(HouseSettingsData other)
+    {
+        MinHeight = other.MinHeight;
+        MaxHeight = other.MaxHeight;
+    }
 }

@@ -12,7 +12,8 @@ public class VoronoiCellSettings : ScriptableObject
 {
     public VoronoiCellSettingsData SettingsData;
 
-    //public HouseBlockSettings HouseBlockSettings;
+    [Tooltip("Easier access to the appropriate SO for the house block according to the VoronoiCellSettings one")]
+    public HouseBlockSettings HouseBlockSettings;
 }
 
 [Serializable]

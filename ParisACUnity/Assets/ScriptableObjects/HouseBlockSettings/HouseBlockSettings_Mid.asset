@@ -10,5 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0fa980ca2b90e1a4f9133a5193a34c98, type: 3}
-  m_Name: HouseBlockSettings_Poor
+  m_Name: HouseBlockSettings_Mid
   m_EditorClassIdentifier: 
+  SettingsData:
+    BlockMaterial: {fileID: 2100000, guid: 27aafe2a3d7fb0441acb8e20dbbc9c3a, type: 2}
+  HouseLineSettingsData:
+    LineMaterial: {fileID: 0}
+  HouseSettingsData:
+    MinHeight: 5
+    MaxHeight: 5
+  HouseLineSettings: {fileID: 0}

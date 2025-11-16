@@ -7,8 +7,12 @@ using UnityEngine;
 public static class Config
 {
     public const string ScriptableObjects_Path = "Assets/ScriptableObjects";
+
+    public const string ScriptableObjects_VoronoiCellSettingsFolder = "VoronoiCellSettings";
+    public const string ScriptableObjects_HouseBlockSettingsFolder = "HouseBlockSettings";
     
     public const string ScriptableObjects_VoronoiCellSettingsDefault = "VoronoiCellSettings_Default.asset";
+    public const string ScriptableObjects_HouseBlockSettingsDefault = "HouseBlockSettings_Default.asset";
 
     public static string CombinePaths(params string[] paths)
     {

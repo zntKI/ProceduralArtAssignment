@@ -10,9 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c8f9f2c573e05494fb43d772342ebd02, type: 3}
-  m_Name: VoronoiCellSettings_Poor
+  m_Name: VoronoiCellSettings_Rich
   m_EditorClassIdentifier: 
   SettingsData:
-    CellMaterial: {fileID: 2100000, guid: 3d0cda22da894594cb1d8a574ebb6cd5, type: 2}
+    CellMaterial: {fileID: 2100000, guid: 114569ab8d1032649ac2acd5d7d02ef7, type: 2}
     DebugSeedCubeSizeModifier: 0.3
     DebugDrawColor: {r: 0, g: 0.30588236, b: 1, a: 1}
+  HouseBlockSettings: {fileID: 11400000, guid: b4be4c187451e114aa5b0a8520e05e63, type: 2}
