@@ -14,14 +14,13 @@ public class HouseLineSettings : ScriptableObject
 {
     public HouseLineSettingsData SettingsData;
 
-    public HouseSettingsData HouseSettingsData;
+    public HouseSettings HouseSettings;
 }
 
 [Serializable]
 public class HouseLineSettingsData
 {
     public Material LineMaterial;
-    public string LineMaterialName => nameof(LineMaterial);
     
     // TODO: Maybe add horizontal house displacement
     

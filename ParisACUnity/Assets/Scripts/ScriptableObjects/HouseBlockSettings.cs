@@ -14,19 +14,15 @@ using System.Collections.Generic;
 public class HouseBlockSettings : ScriptableObject
 {
     public HouseBlockSettingsData SettingsData;
-
-    public HouseLineSettingsData HouseLineSettingsData;
-    public HouseSettingsData HouseSettingsData;
     
-    [Tooltip("Easier access to the appropriate SO for the house line according to the HouseBlockSettings one")]
     public HouseLineSettings HouseLineSettings;
+    public HouseSettings HouseSettings;
 }
 
 [Serializable]
 public class HouseBlockSettingsData
 {
     public Material BlockMaterial;
-    public string BlockMaterialName => nameof(BlockMaterial);
 
     // TODO: Maybe add some settings for additional props generation like:
     // trees, tables, etc. - for more accurate props list, look into the real game

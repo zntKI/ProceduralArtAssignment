@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using UnityEditor;
 using UnityEngine;
 
 public class HouseLine : MonoBehaviour
@@ -10,13 +12,10 @@ public class HouseLine : MonoBehaviour
     private MeshRenderer _meshRenderer;
 
     [HideInInspector] public HouseLineSettings LineSettings;
-    public string HouseLineSettingsName => nameof(LineSettings);
-
     [HideInInspector] public HouseLineSettingsData LineSettingsDataCopy;
-    public string LineSettingsDataCopyName => nameof(LineSettingsDataCopy);
 
+    [HideInInspector] public HouseSettings HouseSettings;
     [HideInInspector] public HouseSettingsData HouseSettingsDataCopy;
-    public string HouseSettingsDataCopyName => nameof(HouseSettingsDataCopy);
 
 
     /// <summary>
@@ -29,9 +28,29 @@ public class HouseLine : MonoBehaviour
         _meshFilter = GetComponent<MeshFilter>();
         _meshFilter.sharedMesh = _cubeMesh;
 
-        LineSettings = blockSettings.HouseLineSettings;
+        if (!blockSettings.HouseLineSettings)
+        {
+            LineSettings = AssetDatabase.LoadAssetAtPath<HouseLineSettings>(
+                Config.CombinePaths(Config.ScriptableObjects_Path, Config.ScriptableObjects_HouseBlockSettingsFolder,
+                    Config.ScriptableObjects_HouseBlockSettingsDefault));
+            Debug.LogWarning(
+                "No appropriate HouseLineSettings present in HouseBlockSettings - Initialized with default HouseLineSettings");
+        }
+        else
+            LineSettings = blockSettings.HouseLineSettings;
         LineSettingsDataCopy = new HouseLineSettingsData(LineSettings.SettingsData);
-        HouseSettingsDataCopy = new HouseSettingsData(LineSettings.HouseSettingsData);
+        
+        if (!blockSettings.HouseSettings)
+        {
+            HouseSettings = AssetDatabase.LoadAssetAtPath<HouseSettings>(
+                Config.CombinePaths(Config.ScriptableObjects_Path, Config.ScriptableObjects_HouseSettingsFolder,
+                    Config.ScriptableObjects_HouseSettingsDefault));
+            Debug.LogWarning(
+                "No appropriate HouseSettings present in HouseBlockSettings - Initialized with default HouseSettings");
+        }
+        else
+            HouseSettings = blockSettings.HouseSettings;
+        HouseSettingsDataCopy = new HouseSettingsData(HouseSettings.SettingsData);
 
         _meshRenderer = GetComponent<MeshRenderer>();
         _meshRenderer.material = LineSettings.SettingsData.LineMaterial;
@@ -110,4 +129,195 @@ public class HouseLine : MonoBehaviour
             2, 5, 6
         };
     }
+
+    #region EditorCode
+    
+    
+    #region ScriptableObjectSwappingLogic
+
+    public void UpdateSettings(string settingsName)
+    {
+        if (settingsName == nameof(LineSettings))
+            UpdateLineSettings();
+        else if (settingsName == nameof(HouseSettings))
+            UpdateHouseSettings();
+    }
+    
+    private void UpdateLineSettings()
+    {
+        LineSettingsDataCopy = new HouseLineSettingsData(LineSettings.SettingsData);
+
+        UpdateLineMaterial();
+    }
+
+    private void UpdateHouseSettings()
+    {
+        HouseSettingsDataCopy = new HouseSettingsData(HouseSettings.SettingsData);
+        
+        UpdateHouseMinHeight();
+        UpdateHouseMaxHeight();
+        
+        // TODO: Forward down to houses if they exist
+    }
+    
+    #endregion
+    
+    
+    #region SettingsFieldChangeLogic
+
+    public void UpdateSettingsCopyByField(Type settingsType, FieldInfo fieldInfo)
+    {
+        if (settingsType == typeof(HouseLineSettingsData))
+            UpdateLineSettingsCopyByField(fieldInfo);
+        else if (settingsType == typeof(HouseSettingsData))
+            UpdateHouseSettingsCopyByField(fieldInfo);
+    }
+
+    private void UpdateLineSettingsCopyByField(FieldInfo fieldInfo)
+    {
+        if (fieldInfo.Name == nameof(LineSettingsDataCopy.LineMaterial))
+            UpdateLineMaterial();
+    }
+    
+    private void UpdateLineMaterial()
+    {
+#if UNITY_EDITOR
+        Undo.RecordObject(_meshRenderer, "Updated Line Settings");
+        _meshRenderer.material = LineSettingsDataCopy.LineMaterial;
+        EditorUtility.SetDirty(_meshRenderer);
+#else
+        Debug.LogError("Updating of Editor Tooling settings should not be happening in Play Mode!");
+#endif
+    }
+    
+    private void UpdateHouseSettingsCopyByField(FieldInfo fieldInfo)
+    {
+        // TODO: Forward down to houses if they exist
+    }
+
+    private void UpdateHouseMinHeight()
+    {
+        
+    }
+    
+    private void UpdateHouseMaxHeight()
+    {
+        
+    }
+
+    public void ApplySettingsCopyToOriginal(Type settingsType)
+    {
+        if (settingsType == typeof(HouseLineSettingsData))
+            ApplyLineSettingsCopyToOriginal();
+        else if (settingsType == typeof(HouseSettingsData))
+            ApplyHouseSettingsCopyToOriginal();
+    }
+    
+    private void ApplyLineSettingsCopyToOriginal()
+    {
+#if UNITY_EDITOR
+        Undo.RecordObject(LineSettings, "Applied House Line Settings To Original");
+        LineSettings.SettingsData = new HouseLineSettingsData(LineSettingsDataCopy);
+        EditorUtility.SetDirty(LineSettings);
+#else
+        Debug.LogError("Updating of Editor Tooling settings should not be happening in Play Mode!");
+#endif
+    }
+    
+    private void ApplyHouseSettingsCopyToOriginal()
+    {
+#if UNITY_EDITOR
+        Undo.RecordObject(HouseSettings, "Applied House Settings To Original");
+        HouseSettings.SettingsData = new HouseSettingsData(HouseSettingsDataCopy);
+        EditorUtility.SetDirty(HouseSettings);
+#else
+        Debug.LogError("Updating of Editor Tooling settings should not be happening in Play Mode!");
+#endif
+    }
+    
+    public void SaveSettingsAsNewSO(Type settingsType)
+    {
+        if (settingsType == typeof(HouseLineSettingsData))
+            SaveLineSettingsAsNewSO();
+        else if (settingsType == typeof(HouseSettingsData))
+            SaveHouseSettingsAsNewSO();
+    }
+    
+    private void SaveLineSettingsAsNewSO()
+    {
+        var newSettings = ScriptableObject.CreateInstance<HouseLineSettings>();
+        newSettings.SettingsData = new HouseLineSettingsData(LineSettingsDataCopy);
+
+        string path = EditorUtility.SaveFilePanelInProject(
+            "Save New House Line Settings - new name goes AFTER '_'",
+            "HouseLineSettings_New",
+            "asset",
+            "Choose a location for the new settings file",
+            Config.CombinePaths(Config.ScriptableObjects_Path, Config.ScriptableObjects_HouseLineSettingsFolder));
+
+        if (!string.IsNullOrEmpty(path))
+        {
+            AssetDatabase.CreateAsset(newSettings, path);
+            AssetDatabase.SaveAssets();
+            EditorUtility.FocusProjectWindow();
+            EditorGUIUtility.PingObject(newSettings);
+        }
+    }
+    
+    private void SaveHouseSettingsAsNewSO()
+    {
+        var newSettings = ScriptableObject.CreateInstance<HouseSettings>();
+        newSettings.SettingsData = new HouseSettingsData(HouseSettingsDataCopy);
+
+        string path = EditorUtility.SaveFilePanelInProject(
+            "Save New House Settings - new name goes AFTER '_'",
+            "HouseSettings_New",
+            "asset",
+            "Choose a location for the new settings file",
+            Config.CombinePaths(Config.ScriptableObjects_Path, Config.ScriptableObjects_HouseSettingsFolder));
+
+        if (!string.IsNullOrEmpty(path))
+        {
+            AssetDatabase.CreateAsset(newSettings, path);
+            AssetDatabase.SaveAssets();
+            EditorUtility.FocusProjectWindow();
+            EditorGUIUtility.PingObject(newSettings);
+        }
+    }
+
+    #endregion
+    
+    public void UpdateHouseLineSettings(HouseLineSettings overrideHouseLineSettings)
+    {
+        LineSettings = overrideHouseLineSettings;
+
+        LineSettingsDataCopy = new HouseLineSettingsData(LineSettings.SettingsData);
+    }
+
+    public void UpdateHouseSettings(HouseSettings overrideHouseSettings)
+    {
+        HouseSettings = overrideHouseSettings;
+
+        HouseSettingsDataCopy = new HouseSettingsData(HouseSettings.SettingsData);
+        
+        // TODO: Forward down to houses if they exist
+    }
+    
+    public void UpdateHouseLineSettingsCopy(HouseLineSettingsData overrideSettingsData, FieldInfo fieldInfo)
+    {
+        if (fieldInfo.Name == nameof(LineSettingsDataCopy.LineMaterial))
+            UpdateLineMaterial();
+    }
+    
+    public void UpdateHouseSettingsCopy(HouseSettingsData overrideSettingsData, FieldInfo fieldInfo)
+    {
+        if (fieldInfo.Name == nameof(HouseSettingsDataCopy.MinHeight))
+            HouseSettingsDataCopy.MinHeight = overrideSettingsData.MinHeight;
+        else if (fieldInfo.Name == nameof(HouseSettingsDataCopy.MaxHeight))
+            HouseSettingsDataCopy.MaxHeight = overrideSettingsData.MaxHeight;
+        
+        // TODO: Forward down to houses if they exist
+    }
+
+    #endregion
 }

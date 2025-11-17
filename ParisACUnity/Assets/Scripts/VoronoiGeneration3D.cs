@@ -159,7 +159,7 @@ public class VoronoiGeneration3D : MonoBehaviour
         
         cell.transform.position = point + transform.up * 0.01f;
         cell.transform.SetParent(transform);
-        
+
         Undo.RegisterCreatedObjectUndo(cell.gameObject, "Created Voronoi Cell");
         
         cell.Init();

@@ -14,15 +14,13 @@ public class VoronoiCell : MonoBehaviour
     private MeshRenderer _meshRenderer;
 
     [HideInInspector] public VoronoiCellSettings CellSettings;
-    public string VoronoiCellSettingsName => nameof(CellSettings);
 
     [HideInInspector] public VoronoiCellSettingsData CellSettingsDataCopy;
-    public string VoronoiCellSettingsDataCopyName => nameof(CellSettingsDataCopy);
 
     private HouseBlock _houseBlock;
-
+    
     private void OnEnable()
-    {
+    {   
         Init();
     }
 
@@ -77,21 +75,44 @@ public class VoronoiCell : MonoBehaviour
         _houseBlock.SetupHouseBlockVertices(polyVertices);
     }
 
+    /// <summary>
+    /// Called when whole scriptable object is swapped in the inspector<br/><br/>
+    ///
+    /// Resets the temporary DataCopy to the new scriptable object's data
+    /// </summary>
     public void UpdateCellSettings()
     {
-        UpdateCellSettingsDataCopy();
+        CellSettingsDataCopy = new VoronoiCellSettingsData(CellSettings.SettingsData);
 
         UpdateCellMaterial();
     }
 
+    /// <summary>
+    /// Called when the scriptable object asset gets changed itself<br/><br/>
+    ///
+    /// Overrides the temporary DataCopy with the new scriptable object's data
+    /// </summary>
     private void UpdateCellSettingsDataCopy()
     {
-        CellSettingsDataCopy = new VoronoiCellSettingsData(CellSettings.SettingsData);
+        // Get all the fields within VoronoiCellSettingsData class in general through Reflection
+        FieldInfo[] fields = typeof(VoronoiCellSettingsData).GetFields();
+        foreach (var field in fields)
+        {
+            var dataCopyValue = field.GetValue(CellSettingsDataCopy);
+            var dataOriginalValue = field.GetValue(CellSettings.SettingsData);
+            
+            if (dataCopyValue != dataOriginalValue)
+            {
+                field.SetValue(CellSettingsDataCopy, dataOriginalValue);
+                
+                UpdateCellSettingsCopyByField(field);
+            }
+        }
     }
 
     public void UpdateCellSettingsCopyByField(FieldInfo fieldInfo)
     {
-        if (fieldInfo.Name == CellSettingsDataCopy.CellMaterialName)
+        if (fieldInfo.Name == nameof(CellSettingsDataCopy.CellMaterial))
             UpdateCellMaterial();
     }
 

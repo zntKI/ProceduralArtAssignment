@@ -57,7 +57,7 @@ public class VoronoiCellEditor : Editor
 
             EditorGUI.BeginChangeCheck();
             {
-                SerializedProperty scriptableObjectSettings = serializedObject.FindProperty(_cell.VoronoiCellSettingsName);
+                SerializedProperty scriptableObjectSettings = serializedObject.FindProperty(nameof(_cell.CellSettings));
                 EditorGUILayout.PropertyField(scriptableObjectSettings, GUIContent.none,
                     GUILayout.ExpandWidth(true), GUILayout.MinWidth(200));   
             }
@@ -90,7 +90,7 @@ public class VoronoiCellEditor : Editor
         GUILayout.Space(15);
         
         // Get the field of VoronoiCellSettingsData within the VoronoiCell class
-        SerializedProperty settingsDataProp = serializedObject.FindProperty(_cell.VoronoiCellSettingsDataCopyName);
+        SerializedProperty settingsDataProp = serializedObject.FindProperty(nameof(_cell.CellSettingsDataCopy));
         
         // Get all the fields within VoronoiCellSettingsData class in general through Reflection
         FieldInfo[] fields = typeof(VoronoiCellSettingsData).GetFields();

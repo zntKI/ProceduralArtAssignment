@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using UnityEditor;
 using Object = UnityEngine.Object;
 
@@ -18,19 +19,13 @@ public class HouseBlock : MonoBehaviour
     #region SettingsRegion
 
     [HideInInspector] public HouseBlockSettings BlockSettings;
-    public string HouseBlockSettingsName => nameof(BlockSettings);
-
-
     [HideInInspector] public HouseBlockSettingsData BlockSettingsDataCopy;
-    public string BlockSettingsDataCopyName => nameof(BlockSettingsDataCopy);
-
-
+    
+    [HideInInspector] public HouseLineSettings HouseLineSettings;
     [HideInInspector] public HouseLineSettingsData HouseLineSettingsDataCopy;
-    public string HouseLineSettingsDataCopyName => nameof(HouseLineSettingsDataCopy);
-
-
+    
+    [HideInInspector] public HouseSettings HouseSettings;
     [HideInInspector] public HouseSettingsData HouseSettingsDataCopy;
-    public string HouseSettingsDataCopyName => nameof(HouseSettingsDataCopy);
 
     #endregion
 
@@ -55,10 +50,45 @@ public class HouseBlock : MonoBehaviour
         _meshFilter = GetComponent<MeshFilter>();
         _meshFilter.sharedMesh = _polyMesh;
 
-        BlockSettings = cellSettings.HouseBlockSettings;
+        #region SettingsInit
+        
+        if (!cellSettings.HouseBlockSettings)
+        {
+            BlockSettings = AssetDatabase.LoadAssetAtPath<HouseBlockSettings>(
+                Config.CombinePaths(Config.ScriptableObjects_Path, Config.ScriptableObjects_HouseBlockSettingsFolder,
+                    Config.ScriptableObjects_HouseBlockSettingsDefault));
+            Debug.LogWarning(
+                "No appropriate HouseBlockSettings present in VoronoiCellSettings - Initialized with default HouseBlockSettings");
+        }
+        else
+            BlockSettings = cellSettings.HouseBlockSettings;
         BlockSettingsDataCopy = new HouseBlockSettingsData(BlockSettings.SettingsData);
-        HouseLineSettingsDataCopy = new HouseLineSettingsData(BlockSettings.HouseLineSettingsData);
-        HouseSettingsDataCopy = new HouseSettingsData(BlockSettings.HouseSettingsData);
+        
+        if (!BlockSettings.HouseLineSettings)
+        {
+            HouseLineSettings = AssetDatabase.LoadAssetAtPath<HouseLineSettings>(
+                Config.CombinePaths(Config.ScriptableObjects_Path, Config.ScriptableObjects_HouseLineSettingsFolder,
+                    Config.ScriptableObjects_HouseLineSettingsDefault));
+            Debug.LogWarning(
+                "No appropriate HouseLineSettings present in HouseBlockSettings - Initialized with default HouseLineSettings");
+        }
+        else
+            HouseLineSettings = BlockSettings.HouseLineSettings;
+        HouseLineSettingsDataCopy = new HouseLineSettingsData(HouseLineSettings.SettingsData);
+        
+        if (!BlockSettings.HouseSettings)
+        {
+            HouseSettings = AssetDatabase.LoadAssetAtPath<HouseSettings>(
+                Config.CombinePaths(Config.ScriptableObjects_Path, Config.ScriptableObjects_HouseSettingsFolder,
+                    Config.ScriptableObjects_HouseSettingsDefault));
+            Debug.LogWarning(
+                "No appropriate HouseSettings present in HouseBlockSettings - Initialized with default HouseSettings");
+        }
+        else
+            HouseSettings = BlockSettings.HouseSettings;
+        HouseSettingsDataCopy = new HouseSettingsData(HouseSettings.SettingsData);
+        
+        #endregion
 
         // TODO: Make it take the half of the average between the min and max height properties
         float averageHeight = (HouseSettingsDataCopy.MinHeight + HouseSettingsDataCopy.MaxHeight) * 0.5f;
@@ -67,6 +97,8 @@ public class HouseBlock : MonoBehaviour
         _meshRenderer = GetComponent<MeshRenderer>();
         _meshRenderer.material = BlockSettings.SettingsData.BlockMaterial;
     }
+
+    #region HouseBlockGenerationCode
 
     /// <summary>
     /// Sets up a smaller polygon area derived from the original voronoi cell polygon,
@@ -254,8 +286,207 @@ public class HouseBlock : MonoBehaviour
         EditorUtility.SetDirty(this);
     }
 
-    private void OnDrawGizmos()
+    #endregion
+
+
+    
+    #region EditorCode
+
+
+    #region ScriptableObjectSwappingLogic
+
+    public void UpdateSettings(string settingsName)
     {
-        // TODO: Maybe draw the house lines connections?
+        if (settingsName == nameof(BlockSettings))
+            UpdateBlockSettings();
+        else if (settingsName == nameof(HouseLineSettings))
+            UpdateHouseLineSettings();
+        else if (settingsName == nameof(HouseSettings))
+            UpdateHouseSettings();
     }
+    
+    private void UpdateBlockSettings()
+    {
+        BlockSettingsDataCopy = new HouseBlockSettingsData(BlockSettings.SettingsData);
+
+        UpdateBlockMaterial();
+    }
+
+    private void UpdateHouseLineSettings()
+    {
+        HouseLineSettingsDataCopy = new HouseLineSettingsData(HouseLineSettings.SettingsData);
+        
+        _houseLines.ForEach(hl => hl.UpdateHouseLineSettings(HouseLineSettings));
+    }
+
+    private void UpdateHouseSettings()
+    {
+        HouseSettingsDataCopy = new HouseSettingsData(HouseSettings.SettingsData);
+        
+        _houseLines.ForEach(hl => hl.UpdateHouseSettings(HouseSettings));
+    }
+    
+    #endregion
+
+
+    #region SettingsFieldChangeLogic
+
+    public void UpdateSettingsCopyByField(Type settingsType, FieldInfo fieldInfo)
+    {
+        if (settingsType == typeof(HouseBlockSettingsData))
+            UpdateBlockSettingsCopyByField(fieldInfo);
+        else if (settingsType == typeof(HouseLineSettingsData))
+            UpdateHouseLineSettingsCopyByField(fieldInfo);
+        else if (settingsType == typeof(HouseSettingsData))
+            UpdateHouseSettingsCopyByField(fieldInfo);
+    }
+
+    private void UpdateBlockSettingsCopyByField(FieldInfo fieldInfo)
+    {
+        if (fieldInfo.Name == nameof(BlockSettingsDataCopy.BlockMaterial))
+            UpdateBlockMaterial();
+    }
+    
+    private void UpdateBlockMaterial()
+    {
+#if UNITY_EDITOR
+        Undo.RecordObject(_meshRenderer, "Updated Block Settings");
+        _meshRenderer.material = BlockSettingsDataCopy.BlockMaterial;
+        EditorUtility.SetDirty(_meshRenderer);
+#else
+        Debug.LogError("Updating of Editor Tooling settings should not be happening in Play Mode!");
+#endif
+    }
+
+    private void UpdateHouseLineSettingsCopyByField(FieldInfo fieldInfo)
+    {
+        _houseLines.ForEach(hl => hl.UpdateHouseLineSettingsCopy(HouseLineSettingsDataCopy, fieldInfo));
+    }
+    
+    private void UpdateHouseSettingsCopyByField(FieldInfo fieldInfo)
+    {
+        _houseLines.ForEach(hl => hl.UpdateHouseSettingsCopy(HouseSettingsDataCopy, fieldInfo));
+    }
+
+    public void ApplySettingsCopyToOriginal(Type settingsType)
+    {
+        if (settingsType == typeof(HouseBlockSettingsData))
+            ApplyBlockSettingsCopyToOriginal();
+        else if (settingsType == typeof(HouseLineSettingsData))
+            ApplyHouseLineSettingsCopyToOriginal();
+        else if (settingsType == typeof(HouseSettingsData))
+            ApplyHouseSettingsCopyToOriginal();
+    }
+    
+    private void ApplyBlockSettingsCopyToOriginal()
+    {
+#if UNITY_EDITOR
+        Undo.RecordObject(BlockSettings, "Applied Block Settings To Original");
+        BlockSettings.SettingsData = new HouseBlockSettingsData(BlockSettingsDataCopy);
+        EditorUtility.SetDirty(BlockSettings);
+#else
+        Debug.LogError("Updating of Editor Tooling settings should not be happening in Play Mode!");
+#endif
+    }
+    
+    private void ApplyHouseLineSettingsCopyToOriginal()
+    {
+#if UNITY_EDITOR
+        Undo.RecordObject(HouseLineSettings, "Applied House Line Settings To Original");
+        HouseLineSettings.SettingsData = new HouseLineSettingsData(HouseLineSettingsDataCopy);
+        EditorUtility.SetDirty(HouseLineSettings);
+#else
+        Debug.LogError("Updating of Editor Tooling settings should not be happening in Play Mode!");
+#endif
+    }
+    
+    private void ApplyHouseSettingsCopyToOriginal()
+    {
+#if UNITY_EDITOR
+        Undo.RecordObject(HouseSettings, "Applied House Settings To Original");
+        HouseSettings.SettingsData = new HouseSettingsData(HouseSettingsDataCopy);
+        EditorUtility.SetDirty(HouseSettings);
+#else
+        Debug.LogError("Updating of Editor Tooling settings should not be happening in Play Mode!");
+#endif
+    }
+    
+    public void SaveSettingsAsNewSO(Type settingsType)
+    {
+        if (settingsType == typeof(HouseBlockSettingsData))
+            SaveBlockSettingsAsNewSO();
+        else if (settingsType == typeof(HouseLineSettingsData))
+            SaveHouseLineSettingsAsNewSO();
+        else if (settingsType == typeof(HouseSettingsData))
+            SaveHouseSettingsAsNewSO();
+    }
+
+    private void SaveBlockSettingsAsNewSO()
+    {
+        var newSettings = ScriptableObject.CreateInstance<HouseBlockSettings>();
+        newSettings.SettingsData = new HouseBlockSettingsData(BlockSettingsDataCopy);
+
+        string path = EditorUtility.SaveFilePanelInProject(
+            "Save New House Block Settings - new name goes AFTER '_'",
+            "HouseBlockSettings_New",
+            "asset",
+            "Choose a location for the new settings file",
+            Config.CombinePaths(Config.ScriptableObjects_Path, Config.ScriptableObjects_HouseBlockSettingsFolder));
+
+        if (!string.IsNullOrEmpty(path))
+        {
+            AssetDatabase.CreateAsset(newSettings, path);
+            AssetDatabase.SaveAssets();
+            EditorUtility.FocusProjectWindow();
+            EditorGUIUtility.PingObject(newSettings);
+        }
+    }
+    
+    private void SaveHouseLineSettingsAsNewSO()
+    {
+        var newSettings = ScriptableObject.CreateInstance<HouseLineSettings>();
+        newSettings.SettingsData = new HouseLineSettingsData(HouseLineSettingsDataCopy);
+
+        string path = EditorUtility.SaveFilePanelInProject(
+            "Save New House Line Settings - new name goes AFTER '_'",
+            "HouseLineSettings_New",
+            "asset",
+            "Choose a location for the new settings file",
+            Config.CombinePaths(Config.ScriptableObjects_Path, Config.ScriptableObjects_HouseLineSettingsFolder));
+
+        if (!string.IsNullOrEmpty(path))
+        {
+            AssetDatabase.CreateAsset(newSettings, path);
+            AssetDatabase.SaveAssets();
+            EditorUtility.FocusProjectWindow();
+            EditorGUIUtility.PingObject(newSettings);
+        }
+    }
+    
+    private void SaveHouseSettingsAsNewSO()
+    {
+        var newSettings = ScriptableObject.CreateInstance<HouseSettings>();
+        newSettings.SettingsData = new HouseSettingsData(HouseSettingsDataCopy);
+
+        string path = EditorUtility.SaveFilePanelInProject(
+            "Save New House Settings - new name goes AFTER '_'",
+            "HouseSettings_New",
+            "asset",
+            "Choose a location for the new settings file",
+            Config.CombinePaths(Config.ScriptableObjects_Path, Config.ScriptableObjects_HouseSettingsFolder));
+
+        if (!string.IsNullOrEmpty(path))
+        {
+            AssetDatabase.CreateAsset(newSettings, path);
+            AssetDatabase.SaveAssets();
+            EditorUtility.FocusProjectWindow();
+            EditorGUIUtility.PingObject(newSettings);
+        }
+    }
+
+    #endregion
+    
+
+    #endregion
+
 }

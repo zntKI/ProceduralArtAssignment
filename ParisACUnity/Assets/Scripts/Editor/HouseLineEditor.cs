@@ -4,18 +4,18 @@ using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-[CustomEditor(typeof(HouseBlock))]
-public class HouseBlockEditor : Editor
+[CustomEditor(typeof(HouseLine))]
+public class HouseLineEditor : Editor
 {
-    private HouseBlock _houseBlock;
+    private HouseLine _houseLine;
     
     private void OnEnable()
     {
         Tools.hidden = true;
-        if (_houseBlock)
+        if (_houseLine)
             return;
 
-        _houseBlock = (HouseBlock)target;
+        _houseLine = (HouseLine)target;
     }
 
     private void OnDisable()
@@ -29,22 +29,16 @@ public class HouseBlockEditor : Editor
         
         serializedObject.Update();
 
-        DrawSerializedObjectField("House Block Scriptable Object Template", nameof(_houseBlock.BlockSettings),
-            Config.CombinePaths(Config.ScriptableObjects_Path, Config.ScriptableObjects_HouseBlockSettingsFolder,
-                Config.ScriptableObjects_HouseBlockSettingsDefault));
-        DrawSettingsFields("Current Object Properties:", nameof(_houseBlock.BlockSettingsDataCopy),
-            typeof(HouseBlockSettingsData));
-        
-        DrawSerializedObjectField("House Line Scriptable Object Template", nameof(_houseBlock.HouseLineSettings),
+        DrawSerializedObjectField("House Line Scriptable Object Template", nameof(_houseLine.LineSettings),
             Config.CombinePaths(Config.ScriptableObjects_Path, Config.ScriptableObjects_HouseLineSettingsFolder,
                 Config.ScriptableObjects_HouseLineSettingsDefault));
-        DrawSettingsFields("House Line Properties:", nameof(_houseBlock.HouseLineSettingsDataCopy),
+        DrawSettingsFields("Current Object Properties:", nameof(_houseLine.LineSettingsDataCopy),
             typeof(HouseLineSettingsData));
         
-        DrawSerializedObjectField("House Scriptable Object Template", nameof(_houseBlock.HouseSettings),
+        DrawSerializedObjectField("House Scriptable Object Template", nameof(_houseLine.HouseSettings),
             Config.CombinePaths(Config.ScriptableObjects_Path, Config.ScriptableObjects_HouseSettingsFolder,
                 Config.ScriptableObjects_HouseSettingsDefault));
-        DrawSettingsFields("House Properties:", nameof(_houseBlock.HouseSettingsDataCopy),
+        DrawSettingsFields("House Properties:", nameof(_houseLine.HouseSettingsDataCopy),
             typeof(HouseSettingsData));
 
         serializedObject.ApplyModifiedProperties();
@@ -67,7 +61,7 @@ public class HouseBlockEditor : Editor
             if (EditorGUI.EndChangeCheck())
             {
                 serializedObject.ApplyModifiedProperties();
-                _houseBlock.UpdateSettings(scriptableObjectName);
+                _houseLine.UpdateSettings(scriptableObjectName);
             }
 
             if (GUILayout.Button("Change from Folder", GUILayout.ExpandWidth(true), GUILayout.MinWidth(150)))
@@ -109,7 +103,7 @@ public class HouseBlockEditor : Editor
                 if (EditorGUI.EndChangeCheck())
                 {
                     serializedObject.ApplyModifiedProperties();
-                    _houseBlock.UpdateSettingsCopyByField(settingsType, field);
+                    _houseLine.UpdateSettingsCopyByField(settingsType, field);
                 }
             }
         }
@@ -118,8 +112,8 @@ public class HouseBlockEditor : Editor
         
         EditorGUILayout.BeginHorizontal();
         {
-            if (GUILayout.Button("Apply to Original")) _houseBlock.ApplySettingsCopyToOriginal(settingsType);
-            if (GUILayout.Button("Save as New")) _houseBlock.SaveSettingsAsNewSO(settingsType);
+            if (GUILayout.Button("Apply to Original")) _houseLine.ApplySettingsCopyToOriginal(settingsType);
+            if (GUILayout.Button("Save as New")) _houseLine.SaveSettingsAsNewSO(settingsType);
         }
         EditorGUILayout.EndHorizontal();
     }
