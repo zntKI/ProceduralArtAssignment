@@ -20,10 +20,10 @@ public class HouseBlock : MonoBehaviour
 
     [HideInInspector] public HouseBlockSettings BlockSettings;
     [HideInInspector] public HouseBlockSettingsData BlockSettingsDataCopy;
-    
+
     [HideInInspector] public HouseLineSettings HouseLineSettings;
     [HideInInspector] public HouseLineSettingsData HouseLineSettingsDataCopy;
-    
+
     [HideInInspector] public HouseSettings HouseSettings;
     [HideInInspector] public HouseSettingsData HouseSettingsDataCopy;
 
@@ -51,7 +51,7 @@ public class HouseBlock : MonoBehaviour
         _meshFilter.sharedMesh = _polyMesh;
 
         #region SettingsInit
-        
+
         if (!cellSettings.HouseBlockSettings)
         {
             BlockSettings = AssetDatabase.LoadAssetAtPath<HouseBlockSettings>(
@@ -62,8 +62,9 @@ public class HouseBlock : MonoBehaviour
         }
         else
             BlockSettings = cellSettings.HouseBlockSettings;
+
         BlockSettingsDataCopy = new HouseBlockSettingsData(BlockSettings.SettingsData);
-        
+
         if (!BlockSettings.HouseLineSettings)
         {
             HouseLineSettings = AssetDatabase.LoadAssetAtPath<HouseLineSettings>(
@@ -74,8 +75,9 @@ public class HouseBlock : MonoBehaviour
         }
         else
             HouseLineSettings = BlockSettings.HouseLineSettings;
+
         HouseLineSettingsDataCopy = new HouseLineSettingsData(HouseLineSettings.SettingsData);
-        
+
         if (!BlockSettings.HouseSettings)
         {
             HouseSettings = AssetDatabase.LoadAssetAtPath<HouseSettings>(
@@ -86,8 +88,9 @@ public class HouseBlock : MonoBehaviour
         }
         else
             HouseSettings = BlockSettings.HouseSettings;
+
         HouseSettingsDataCopy = new HouseSettingsData(HouseSettings.SettingsData);
-        
+
         #endregion
 
         // TODO: Make it take the half of the average between the min and max height properties
@@ -246,10 +249,14 @@ public class HouseBlock : MonoBehaviour
         // Indexing is VERY STRICT and is directly related to how the house block mesh generation is set up
         for (int i = 0; i < _houseLinesConnections.Count; i++)
         {
+            var v1NeighbouringConnection = _houseLinesConnections[((i - 1) + _houseLinesConnections.Count) % _houseLinesConnections.Count];
             var v1 = _houseLinesConnections[i];
-            var v2 = _houseLinesConnections[(i + 1) % _houseLinesConnections.Count];
 
-            _houseLines[i].Setup(new Tuple<Vector3, Vector3>(v1, v2), offsets[i]);
+            var v2 = _houseLinesConnections[(i + 1) % _houseLinesConnections.Count];
+            var v2NeighbouringConnection = _houseLinesConnections[(i + 2) % _houseLinesConnections.Count];
+
+            _houseLines[i].Setup(new Tuple<Vector3, Vector3>(v1, v2),
+                new Tuple<Vector3, Vector3>(v1NeighbouringConnection, v2NeighbouringConnection));
         }
     }
 
@@ -289,9 +296,7 @@ public class HouseBlock : MonoBehaviour
     #endregion
 
 
-    
     #region EditorCode
-
 
     #region ScriptableObjectSwappingLogic
 
@@ -304,7 +309,7 @@ public class HouseBlock : MonoBehaviour
         else if (settingsName == nameof(HouseSettings))
             UpdateHouseSettings();
     }
-    
+
     private void UpdateBlockSettings()
     {
         BlockSettingsDataCopy = new HouseBlockSettingsData(BlockSettings.SettingsData);
@@ -315,17 +320,17 @@ public class HouseBlock : MonoBehaviour
     private void UpdateHouseLineSettings()
     {
         HouseLineSettingsDataCopy = new HouseLineSettingsData(HouseLineSettings.SettingsData);
-        
+
         _houseLines.ForEach(hl => hl.UpdateHouseLineSettings(HouseLineSettings));
     }
 
     private void UpdateHouseSettings()
     {
         HouseSettingsDataCopy = new HouseSettingsData(HouseSettings.SettingsData);
-        
+
         _houseLines.ForEach(hl => hl.UpdateHouseSettings(HouseSettings));
     }
-    
+
     #endregion
 
 
@@ -346,7 +351,7 @@ public class HouseBlock : MonoBehaviour
         if (fieldInfo.Name == nameof(BlockSettingsDataCopy.BlockMaterial))
             UpdateBlockMaterial();
     }
-    
+
     private void UpdateBlockMaterial()
     {
 #if UNITY_EDITOR
@@ -362,7 +367,7 @@ public class HouseBlock : MonoBehaviour
     {
         _houseLines.ForEach(hl => hl.UpdateHouseLineSettingsCopy(HouseLineSettingsDataCopy, fieldInfo));
     }
-    
+
     private void UpdateHouseSettingsCopyByField(FieldInfo fieldInfo)
     {
         _houseLines.ForEach(hl => hl.UpdateHouseSettingsCopy(HouseSettingsDataCopy, fieldInfo));
@@ -377,7 +382,7 @@ public class HouseBlock : MonoBehaviour
         else if (settingsType == typeof(HouseSettingsData))
             ApplyHouseSettingsCopyToOriginal();
     }
-    
+
     private void ApplyBlockSettingsCopyToOriginal()
     {
 #if UNITY_EDITOR
@@ -388,7 +393,7 @@ public class HouseBlock : MonoBehaviour
         Debug.LogError("Updating of Editor Tooling settings should not be happening in Play Mode!");
 #endif
     }
-    
+
     private void ApplyHouseLineSettingsCopyToOriginal()
     {
 #if UNITY_EDITOR
@@ -399,9 +404,10 @@ public class HouseBlock : MonoBehaviour
         Debug.LogError("Updating of Editor Tooling settings should not be happening in Play Mode!");
 #endif
     }
-    
+
     private void ApplyHouseSettingsCopyToOriginal()
     {
+        Debug.Log("In");
 #if UNITY_EDITOR
         Undo.RecordObject(HouseSettings, "Applied House Settings To Original");
         HouseSettings.SettingsData = new HouseSettingsData(HouseSettingsDataCopy);
@@ -410,7 +416,7 @@ public class HouseBlock : MonoBehaviour
         Debug.LogError("Updating of Editor Tooling settings should not be happening in Play Mode!");
 #endif
     }
-    
+
     public void SaveSettingsAsNewSO(Type settingsType)
     {
         if (settingsType == typeof(HouseBlockSettingsData))
@@ -441,7 +447,7 @@ public class HouseBlock : MonoBehaviour
             EditorGUIUtility.PingObject(newSettings);
         }
     }
-    
+
     private void SaveHouseLineSettingsAsNewSO()
     {
         var newSettings = ScriptableObject.CreateInstance<HouseLineSettings>();
@@ -462,7 +468,7 @@ public class HouseBlock : MonoBehaviour
             EditorGUIUtility.PingObject(newSettings);
         }
     }
-    
+
     private void SaveHouseSettingsAsNewSO()
     {
         var newSettings = ScriptableObject.CreateInstance<HouseSettings>();
@@ -485,8 +491,6 @@ public class HouseBlock : MonoBehaviour
     }
 
     #endregion
-    
 
     #endregion
-
 }

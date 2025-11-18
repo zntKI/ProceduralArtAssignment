@@ -18,11 +18,13 @@ public class HouseSettings : ScriptableObject
 [Serializable]
 public class HouseSettingsData
 {
-    // TODO: Make min and max height separate properties
-    [Range(5.0f, 10.0f)]
+    [Range(3.0f, 8.0f)]
     public float MinHeight;
-    [Range(5.0f, 10.0f)]
+    [Range(3.0f, 8.0f)]
     public float MaxHeight;
+
+    [Range(2, 5)]
+    public int Depth;
     
     public HouseSettingsData(HouseSettingsData other)
     {
@@ -31,7 +33,9 @@ public class HouseSettingsData
 
     public void Copy(HouseSettingsData other)
     {
+        // Do with reflection instead for unified approach
         MinHeight = other.MinHeight;
         MaxHeight = other.MaxHeight;
+        Depth = other.Depth;
     }
 }

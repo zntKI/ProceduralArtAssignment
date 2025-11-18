@@ -13,5 +13,6 @@ MonoBehaviour:
   m_Name: HouseSettings_New
   m_EditorClassIdentifier: 
   SettingsData:
-    MinHeight: 5.95
+    MinHeight: 5
     MaxHeight: 10
+    Depth: 2
