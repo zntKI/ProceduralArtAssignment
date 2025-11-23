@@ -23,7 +23,8 @@ public class HouseBlockSettings : ScriptableObject
 public class HouseBlockSettingsData
 {
     public Material BlockMaterial;
-
+    public Material GroundSubstance;
+    
     // TODO: Maybe add some settings for additional props generation like:
     // trees, tables, etc. - for more accurate props list, look into the real game
     
@@ -35,5 +36,6 @@ public class HouseBlockSettingsData
     public void Copy(HouseBlockSettingsData other)
     {
         BlockMaterial = other.BlockMaterial;
+        GroundSubstance = other.GroundSubstance;
     }
 }

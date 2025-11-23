@@ -5,7 +5,7 @@ using UnityEngine;
 using Object = UnityEngine.Object;
 
 [CustomEditor(typeof(VoronoiCell))]
-public class VoronoiCellEditor : Editor
+public class VoronoiCellEditor : ShapeEditor
 {
     private VoronoiCell _cell;
     private VoronoiCellSettings _voronoiCellSettings;
@@ -65,6 +65,10 @@ public class VoronoiCellEditor : Editor
             {
                 serializedObject.ApplyModifiedProperties();
                 _cell.UpdateCellSettings();
+                
+                if (!_diagram)
+                    _diagram = _cell.GetComponentInParent<VoronoiGeneration3D>();
+                _diagram.CalculateVoronoiDiagram();
             }
 
             if (GUILayout.Button("Change from Folder", GUILayout.ExpandWidth(true), GUILayout.MinWidth(150)))

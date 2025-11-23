@@ -3,9 +3,11 @@
 //   (1) localScale=(1,1,1) to work correctly with scaled roots,
 //   (2) buildDelay included and passed here, though used only in subclasses
 
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 
 /// <summary>
@@ -69,7 +71,8 @@ public abstract class Shape : MonoBehaviour
     /// Returns the new Symbol (a.k.a. Shape component).
     /// </summary>
     protected T CreateSymbol<T>(string name, Vector3 localPosition = new Vector3(),
-        Quaternion localRotation = new Quaternion(), Vector3 localScale = new Vector3(), Transform parent = null)
+        Quaternion localRotation = new Quaternion(), Vector3 localScale = new Vector3(), Transform parent = null,
+        GameObject root = null, params Type[] additionalComponents)
         where T : Shape
     {
         if (parent == null)
@@ -77,7 +80,7 @@ public abstract class Shape : MonoBehaviour
             parent = transform; // default: add as child game object
         }
 
-        GameObject newObj = new GameObject(name);
+        GameObject newObj = new GameObject(name, additionalComponents);
         newObj.transform.parent = parent;
         newObj.transform.localPosition = localPosition;
         newObj.transform.localRotation = localRotation;
@@ -89,8 +92,45 @@ public abstract class Shape : MonoBehaviour
         newObj.transform.localScale = localScale;
         AddGenerated(newObj);
         T component = newObj.AddComponent<T>();
-        component.root = Root;
+        
+        if (!root)
+        {
+            root = Root;
+        }
+        component.root = root;
         component.buildDelay = buildDelay;
+        
+        return component;
+    }
+    
+    protected Shape CreateSymbol(GameObject symbol, Vector3 localPosition = new Vector3(),
+        Quaternion localRotation = new Quaternion(), Vector3 localScale = new Vector3(), Transform parent = null,
+        GameObject root = null)
+    {
+        if (parent == null)
+        {
+            parent = transform; // default: add as child game object
+        }
+
+        GameObject newObj = Instantiate(symbol, parent);
+        newObj.transform.localPosition = localPosition;
+        newObj.transform.localRotation = localRotation;
+        if (localScale == Vector3.zero)
+        {
+            localScale = parent.localScale;
+        }
+
+        newObj.transform.localScale = localScale;
+        AddGenerated(newObj);
+        Shape component = newObj.GetComponent<Shape>();
+        
+        if (!root)
+        {
+            root = Root;
+        }
+        component.root = root;
+        component.buildDelay = buildDelay;
+        
         return component;
     }
 
@@ -140,6 +180,20 @@ public abstract class Shape : MonoBehaviour
         {
             // use Unity's random
             return Random.Range(0, maxValue);
+        }
+    }
+    
+    protected int RandomInt(int minValue, int maxValue)
+    {
+        RandomGenerator rnd = Root.GetComponent<RandomGenerator>();
+        if (rnd != null)
+        {
+            return minValue + rnd.Next(maxValue - minValue);
+        }
+        else
+        {
+            // use Unity's random
+            return Random.Range(minValue, maxValue);
         }
     }
 
@@ -225,7 +279,10 @@ public abstract class Shape : MonoBehaviour
             // Delete recursively: (needed for when it's not a child of this game object)
             Shape shapeComp = gen.GetComponent<Shape>();
             if (shapeComp != null)
+            {
+                ClearState();
                 shapeComp.DeleteGenerated();
+            }
 
             DestroyImmediate(gen);
         }
@@ -241,4 +298,6 @@ public abstract class Shape : MonoBehaviour
     ///   SpawnPrefab to create terminal symbols (=game objects)
     /// </summary>
     protected abstract void Execute();
+
+    protected virtual void ClearState() {}
 }

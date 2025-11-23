@@ -14,5 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   SettingsData:
     BlockMaterial: {fileID: 2100000, guid: 8fe517d9aaf38f7418b9e7c68e920a7b, type: 2}
+    GroundSubstance: {fileID: 2100000, guid: dbf42cdc406a5a24da430520d903a998, type: 2}
   HouseLineSettings: {fileID: 11400000, guid: 3d4120d028e42d4498bd8a86d9f7da3b, type: 2}
   HouseSettings: {fileID: 11400000, guid: 12a1afaab2bd6d949b70add29dd1ca47, type: 2}

@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f857e1ca6a99bb4ca3fda5e27efa37a, type: 3}
+  m_Name: HouseSettings_Poor
+  m_EditorClassIdentifier: 
+  SettingsData:
+    HouseMaterial: {fileID: 2100000, guid: 859e97d639c837e40a407d0a87994744, type: 2}
+    MinHeight: 2
+    MaxHeight: 3
+    MinWidth: 1
+    MaxWidth: 3
+    MinDepth: 2
+    MaxDepth: 3
+    wallType: {fileID: 2325010374752466665, guid: 4dbecd29a95493e4cbe794cbf686e9af, type: 3}
+    doorType: {fileID: 8044056287803473388, guid: 8941721d82356f3409693df8cc67875c, type: 3}
+    windowType: {fileID: 3315474755899360161, guid: d45d18302c7e492498140eb35e7de2b8, type: 3}
+    roofType1: {fileID: 4877514941836042426, guid: e1d51e8fd58537747a3e0aec7901647d, type: 3}
+    roofType2: {fileID: 0}
+    roofType3: {fileID: 0}
+    roofTop: {fileID: 304489947749707321, guid: e08fb9c2f474f894abbc9cc34039fd3a, type: 3}
+    roofGenType: {fileID: 2938324476780645081, guid: 73bf395dd75c4e946ba1a341244703eb, type: 3}

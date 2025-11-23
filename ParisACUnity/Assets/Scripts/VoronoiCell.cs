@@ -7,7 +7,7 @@ using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine.Serialization;
 
-public class VoronoiCell : MonoBehaviour
+public class VoronoiCell : Shape
 {
     private Mesh _polyMesh;
     private MeshFilter _meshFilter;
@@ -46,7 +46,7 @@ public class VoronoiCell : MonoBehaviour
         _houseBlock = new GameObject($"House Block",
             typeof(HouseBlock), typeof(MeshFilter), typeof(MeshRenderer)).GetComponent<HouseBlock>();
         
-        _houseBlock.transform.position = transform.position;
+        //_houseBlock.transform.position = transform.position;
         _houseBlock.transform.SetParent(transform);
         
         Undo.RegisterCreatedObjectUndo(_houseBlock.gameObject, "Created House Block");
@@ -71,6 +71,30 @@ public class VoronoiCell : MonoBehaviour
         }
 
         _polyMesh.triangles = meshTriangles.ToArray();
+        
+        
+        Vector2[] uvs = new Vector2[_polyMesh.vertices.Length];
+        
+        // Determine bounds
+        float minX = _polyMesh.vertices.Min(v => v.x);
+        float maxX = _polyMesh.vertices.Max(v => v.x);
+        float minZ = _polyMesh.vertices.Min(v => v.z);
+        float maxZ = _polyMesh.vertices.Max(v => v.z);
+
+        float sizeX = maxX - minX;
+        float sizeZ = maxZ - minZ;
+
+        for (int i = 0; i < _polyMesh.vertices.Length; i++)
+        {
+            var v = _polyMesh.vertices[i];
+
+            float u = (v.x - minX) / sizeX;
+            float vCoord = (v.z - minZ) / sizeZ;
+
+            uvs[i] = new Vector2(u, vCoord);
+        }
+
+        _polyMesh.uv = uvs;
 
         _houseBlock.SetupHouseBlockVertices(polyVertices);
     }
@@ -85,6 +109,8 @@ public class VoronoiCell : MonoBehaviour
         CellSettingsDataCopy = new VoronoiCellSettingsData(CellSettings.SettingsData);
 
         UpdateCellMaterial();
+        
+        _houseBlock.ReInit(CellSettings);
     }
 
     /// <summary>
@@ -166,5 +192,12 @@ public class VoronoiCell : MonoBehaviour
         Vector3 drawSpherePos = transform.GetChild(0).position;
         Gizmos.DrawSphere(drawSpherePos,
             transform.parent.localScale.x * CellSettingsDataCopy.DebugSeedCubeSizeModifier);
+    }
+
+    protected override void Execute()
+    {
+        _meshRenderer.material = _houseBlock.BlockSettingsDataCopy.GroundSubstance;
+        
+        _houseBlock.Generate();
     }
 }

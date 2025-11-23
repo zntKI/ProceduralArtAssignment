@@ -5,13 +5,13 @@ using UnityEngine;
 using Object = UnityEngine.Object;
 
 [CustomEditor(typeof(HouseLine))]
-public class HouseLineEditor : Editor
+public class HouseLineEditor : ShapeEditor
 {
     private HouseLine _houseLine;
     
     private void OnEnable()
     {
-        Tools.hidden = true;
+        //Tools.hidden = true;
         if (_houseLine)
             return;
 
@@ -20,7 +20,7 @@ public class HouseLineEditor : Editor
 
     private void OnDisable()
     {
-        Tools.hidden = false;
+        //Tools.hidden = false;
     }
 
     public override void OnInspectorGUI()

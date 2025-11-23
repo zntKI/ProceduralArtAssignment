@@ -6,7 +6,7 @@ using System.Reflection;
 using UnityEditor;
 using Object = UnityEngine.Object;
 
-public class HouseBlock : MonoBehaviour
+public class HouseBlock : Shape
 {
     private Mesh _polyMesh;
     private MeshFilter _meshFilter;
@@ -93,12 +93,17 @@ public class HouseBlock : MonoBehaviour
 
         #endregion
 
-        // TODO: Make it take the half of the average between the min and max height properties
-        float averageHeight = (HouseSettingsDataCopy.MinHeight + HouseSettingsDataCopy.MaxHeight) * 0.5f;
-        transform.position += new Vector3(0.0f, averageHeight * 0.5f, 0.0f);
+        transform.position = transform.parent.position + new Vector3(0.0f, HouseSettingsDataCopy.MaxHeight * 0.5f, 0.0f);
 
         _meshRenderer = GetComponent<MeshRenderer>();
         _meshRenderer.material = BlockSettings.SettingsData.BlockMaterial;
+    }
+
+    public void ReInit(VoronoiCellSettings cellSettings)
+    {
+        Init(cellSettings);
+        
+        _houseLines.ForEach(hl => hl.ReInit(BlockSettings));
     }
 
     #region HouseBlockGenerationCode
@@ -208,10 +213,8 @@ public class HouseBlock : MonoBehaviour
 
         var houseLineConnections = param.Item1;
 
-        // Adjust the height of the house block mesh vertices according to the set height of the houses
-        float averageHeight = (HouseSettingsDataCopy.MinHeight + HouseSettingsDataCopy.MaxHeight) * 0.5f;
         houseLineConnections = houseLineConnections
-            .Select(v => v += new Vector3(0, averageHeight * 0.5f, 0)).ToList();
+            .Select(v => v += new Vector3(0, HouseSettingsDataCopy.MaxHeight * 0.5f, 0)).ToList();
 
         // Transform from world to local space
         _polyMesh.vertices = houseLineConnections
@@ -295,6 +298,16 @@ public class HouseBlock : MonoBehaviour
 
     #endregion
 
+    #region ShapeGrammerCode
+    
+    protected override void Execute()
+    {
+        _meshRenderer.enabled = false;
+        
+        _houseLines.ForEach(hl => hl.Generate());
+    }
+    
+    #endregion
 
     #region EditorCode
 
@@ -315,6 +328,8 @@ public class HouseBlock : MonoBehaviour
         BlockSettingsDataCopy = new HouseBlockSettingsData(BlockSettings.SettingsData);
 
         UpdateBlockMaterial();
+        
+        _houseLines.ForEach(hl => hl.ReInit(BlockSettings));
     }
 
     private void UpdateHouseLineSettings()

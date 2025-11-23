@@ -2,11 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using System.Linq;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
-public class VoronoiGeneration3D : MonoBehaviour
+public class VoronoiGeneration3D : Shape
 {
     // ReSharper disable Unity.PerformanceAnalysis
     /// <summary>
@@ -148,10 +149,6 @@ public class VoronoiGeneration3D : MonoBehaviour
         }
     }
 
-    private void OnDrawGizmosSelected()
-    {
-    }
-
     private void CreateCell(Vector3 point)
     {
         var cell = new GameObject($"Voronoi Cell {transform.childCount+1}",
@@ -165,5 +162,14 @@ public class VoronoiGeneration3D : MonoBehaviour
         cell.Init();
         
         EditorUtility.SetDirty(this);
+    }
+
+    protected override void Execute()
+    {
+        foreach (Transform child in transform)
+        {
+            if (child.TryGetComponent<VoronoiCell>(out var voronoiCell))
+                voronoiCell.Generate();
+        }
     }
 }

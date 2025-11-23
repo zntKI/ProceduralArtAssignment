@@ -5,7 +5,7 @@ using UnityEngine;
 using Object = UnityEngine.Object;
 
 [CustomEditor(typeof(HouseBlock))]
-public class HouseBlockEditor : Editor
+public class HouseBlockEditor : ShapeEditor
 {
     private HouseBlock _houseBlock;
     

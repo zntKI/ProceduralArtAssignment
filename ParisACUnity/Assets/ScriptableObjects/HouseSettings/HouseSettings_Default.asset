@@ -13,6 +13,18 @@ MonoBehaviour:
   m_Name: HouseSettings_Default
   m_EditorClassIdentifier: 
   SettingsData:
-    MinHeight: 3
+    HouseMaterial: {fileID: 2100000, guid: 859e97d639c837e40a407d0a87994744, type: 2}
+    MinHeight: 2
     MaxHeight: 8
-    Depth: 3
+    MinWidth: 1
+    MaxWidth: 10
+    MinDepth: 2
+    MaxDepth: 3
+    wallType: {fileID: 8308060212196062648, guid: 96e0b2d8dc352fa4da7835a07736ce9e, type: 3}
+    doorType: {fileID: 3040808786100610316, guid: 4d78235a6a35e544c9eebf19e75954e7, type: 3}
+    windowType: {fileID: 6443766136940872422, guid: 8ee86e0a92c81bf40b7d46d6f125cf69, type: 3}
+    roofType1: {fileID: 363598232159250706, guid: fe35cacf3927817408f608ada5ded550, type: 3}
+    roofType2: {fileID: 0}
+    roofType3: {fileID: 0}
+    roofTop: {fileID: 3921364474922217017, guid: 220eebee4fc70e54580375260cff2cc7, type: 3}
+    roofGenType: {fileID: 2938324476780645081, guid: 73bf395dd75c4e946ba1a341244703eb, type: 3}

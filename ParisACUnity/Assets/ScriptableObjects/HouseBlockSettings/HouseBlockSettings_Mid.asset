@@ -14,9 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   SettingsData:
     BlockMaterial: {fileID: 2100000, guid: 27aafe2a3d7fb0441acb8e20dbbc9c3a, type: 2}
-  HouseLineSettingsData:
-    LineMaterial: {fileID: 0}
-  HouseSettingsData:
-    MinHeight: 5
-    MaxHeight: 5
-  HouseLineSettings: {fileID: 0}
+    GroundSubstance: {fileID: 2100000, guid: ea9e1c285894ed94aa414149ca0564e2, type: 2}
+  HouseLineSettings: {fileID: 11400000, guid: b6d77b92f20b8a146b52ade123ff84e5, type: 2}
+  HouseSettings: {fileID: 11400000, guid: bf00b40327d7e5049985b79d751a450a, type: 2}

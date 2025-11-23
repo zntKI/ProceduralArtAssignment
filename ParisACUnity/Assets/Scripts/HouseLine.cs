@@ -5,9 +5,10 @@ using System.Numerics;
 using System.Reflection;
 using UnityEditor;
 using UnityEngine;
+using Quaternion = UnityEngine.Quaternion;
 using Vector3 = UnityEngine.Vector3;
 
-public class HouseLine : MonoBehaviour
+public class HouseLine : Shape
 {
     private Mesh _cubeMesh;
     private MeshFilter _meshFilter;
@@ -22,10 +23,12 @@ public class HouseLine : MonoBehaviour
     private Tuple<Vector3, Vector3> _meshLine;
     private Tuple<Vector3, Vector3> _neighbouringTwoLinePoints;
 
+    private List<House> _houses = new List<House>();
+
     /// <summary>
     /// 
     /// </summary>
-    /// <param name="cellSettings">Cell settings to inherit from</param>
+    /// <param name="blockSettings">Block settings to inherit from</param>
     public void Init(HouseBlockSettings blockSettings)
     {
         _cubeMesh = new Mesh();
@@ -35,8 +38,8 @@ public class HouseLine : MonoBehaviour
         if (!blockSettings.HouseLineSettings)
         {
             LineSettings = AssetDatabase.LoadAssetAtPath<HouseLineSettings>(
-                Config.CombinePaths(Config.ScriptableObjects_Path, Config.ScriptableObjects_HouseBlockSettingsFolder,
-                    Config.ScriptableObjects_HouseBlockSettingsDefault));
+                Config.CombinePaths(Config.ScriptableObjects_Path, Config.ScriptableObjects_HouseLineSettingsFolder,
+                    Config.ScriptableObjects_HouseLineSettingsDefault));
             Debug.LogWarning(
                 "No appropriate HouseLineSettings present in HouseBlockSettings - Initialized with default HouseLineSettings");
         }
@@ -62,6 +65,13 @@ public class HouseLine : MonoBehaviour
         _meshRenderer.material = LineSettings.SettingsData.LineMaterial;
     }
 
+    public void ReInit(HouseBlockSettings blockSettings)
+    {
+        Init(blockSettings);
+        
+        _houses.ForEach(h => h.ReInit(HouseSettings, HouseSettingsDataCopy));
+    }
+
     /// <summary>
     /// Generates a rectangular parallelepiped mesh which is: <br/>
     /// - displaced inwards by <see cref="offset"/>/2 <br/>
@@ -73,26 +83,24 @@ public class HouseLine : MonoBehaviour
     /// <param name="neighbouringTwoLinePoints">The neighbour points to line which are used to calculate small house line displacement</param>
     public void Setup(Tuple<Vector3, Vector3> line, Tuple<Vector3, Vector3> neighbouringTwoLinePoints)
     {
-        _meshLine = new Tuple<Vector3, Vector3>(line.Item1, line.Item2);
-        var houseLineV1 = _meshLine.Item1;
-        var houseLineV2 = _meshLine.Item2;
-
-        var midPoint = (houseLineV1 + houseLineV2) * 0.5f;
-        transform.position = midPoint;
-
-        var center = transform.position;
-
-        float meshHeight = HouseSettingsDataCopy.MaxHeight * 0.5f;
-        float meshHeightHalf = meshHeight * 0.5f;
-        float meshDepth = HouseSettingsDataCopy.Depth;
+        var houseLineV1 = line.Item1;
+        var houseLineV2 = line.Item2;
 
         Vector3 edgeDir1 = (houseLineV2 - houseLineV1).normalized;
         Vector3 cross1 = Vector3.Cross(edgeDir1, transform.up);
         Vector3 cross2 = Vector3.Cross(transform.up, edgeDir1);
 
-        Vector3 widthDirVector = (Vector3.Dot(cross1, transform.parent.position - center)) > 0 ? cross1 : cross2;
+        var midPoint = (houseLineV1 + houseLineV2) * 0.5f;
+        Vector3 widthDirVector = (Vector3.Dot(cross1, transform.parent.position - midPoint)) > 0 ? cross1 : cross2;
+        Vector3 localForwardVector = widthDirVector * -1.0f;
 
+        int meshHeight = HouseSettingsDataCopy.MaxHeight;
+        float meshHeightHalf = meshHeight * 0.5f;
+        int meshDepth = HouseSettingsDataCopy.MaxDepth;
+        float meshDepthHalf = meshDepth * 0.5f;
 
+        #region MyRegion
+        
         _neighbouringTwoLinePoints =
             new Tuple<Vector3, Vector3>(neighbouringTwoLinePoints.Item1, neighbouringTwoLinePoints.Item2);
         var neighbouringPointV1 = _neighbouringTwoLinePoints.Item1;
@@ -113,24 +121,29 @@ public class HouseLine : MonoBehaviour
 
         Vector3 v2FaceWidthDisplacement = edgeDir2 * displacementAmountV2;
 
+        #endregion
+        
+        houseLineV1 = houseLineV1 + (-transform.up * meshHeightHalf) + (widthDirVector * meshDepthHalf) + v1FaceWidthDisplacement;
+        houseLineV2 = houseLineV2 + (-transform.up * meshHeightHalf) + (widthDirVector * meshDepthHalf) + v2FaceWidthDisplacement;
+        _meshLine = new Tuple<Vector3, Vector3>(houseLineV1, houseLineV2);
 
+        // Position set to the center of the bottom for ease of procedural house placement
+        transform.position = (houseLineV1 + houseLineV2) * 0.5f;
+        transform.LookAt(transform.position + localForwardVector);
+        
         List<Vector3> meshVertices = new List<Vector3>()
         {
             // houseLineV1 face
-            (houseLineV1 + (transform.up * meshHeightHalf) + v1FaceWidthDisplacement), // v1
-            (houseLineV1 + (-transform.up * meshHeightHalf) + v1FaceWidthDisplacement), // v2
-            (houseLineV1 + (-transform.up * meshHeightHalf) + widthDirVector * meshDepth +
-             v1FaceWidthDisplacement), // v3
-            (houseLineV1 + (transform.up * meshHeightHalf) + widthDirVector * meshDepth +
-             v1FaceWidthDisplacement), // v4
+            houseLineV1 + (-widthDirVector * meshDepthHalf), // v1
+            houseLineV1 + (widthDirVector * meshDepthHalf), // v2
+            houseLineV1 + (widthDirVector * meshDepthHalf) + (transform.up * meshHeight), // v3
+            houseLineV1 + (-widthDirVector * meshDepthHalf) + (transform.up * meshHeight), // v4
 
             // houseLineV2 face
-            (houseLineV2 + (transform.up * meshHeightHalf)) + v2FaceWidthDisplacement, // v5
-            (houseLineV2 + (-transform.up * meshHeightHalf)) + v2FaceWidthDisplacement, // v6
-            (houseLineV2 + (-transform.up * meshHeightHalf)) + widthDirVector * meshDepth +
-            v2FaceWidthDisplacement, // v7
-            (houseLineV2 + (transform.up * meshHeightHalf)) + widthDirVector * meshDepth +
-            v2FaceWidthDisplacement, // v8
+            houseLineV2 + (-widthDirVector * meshDepthHalf), // v5
+            houseLineV2 + (widthDirVector * meshDepthHalf), // v6
+            houseLineV2 + (widthDirVector * meshDepthHalf) + (transform.up * meshHeight), // v7
+            houseLineV2 + (-widthDirVector * meshDepthHalf) + (transform.up * meshHeight), // v8
         };
 
         //  meshVertices = meshVertices.Select(v => v += -widthDirVector * meshDepth * 0.5f).ToList();
@@ -165,6 +178,49 @@ public class HouseLine : MonoBehaviour
         };
     }
 
+    #region ShapeGrammarCode
+
+    protected override void Execute()
+    {
+        _meshRenderer.enabled = false;
+        
+        var houseLineV1 = _meshLine.Item1;
+        var houseLineV2 = _meshLine.Item2;
+        var houseLine = houseLineV2 - houseLineV1;
+        var houseLineDir = houseLine.normalized;
+
+        float remainingLength = houseLine.magnitude;
+        int houseWidth = RandomInt(HouseSettingsDataCopy.MinWidth, HouseSettingsDataCopy.MaxWidth + 1);
+        int filledLength = 0;
+
+        while (remainingLength >= houseWidth)
+        {
+            Vector3 housePosOffsetAlongLineDir = houseLineDir * (filledLength + (houseWidth * 0.5f));
+            Vector3 newPoint = houseLineV1 + housePosOffsetAlongLineDir;
+            Vector3 houseLocalPos = newPoint - transform.position;
+
+            houseLocalPos = transform.InverseTransformDirection(houseLocalPos);
+
+            House house = CreateSymbol<House>($"House {transform.childCount + 1}", houseLocalPos,
+                default(Quaternion), default(Vector3), transform, null,
+                typeof(MeshFilter), typeof(MeshRenderer));
+            house.Init(HouseSettings, HouseSettingsDataCopy);
+            house.Init(houseWidth);
+
+            _houses.Add(house);
+
+            house.Generate();
+
+            remainingLength -= houseWidth;
+            filledLength += houseWidth;
+
+            houseWidth = RandomInt(LineSettings.HouseSettings.SettingsData.MinWidth,
+                LineSettings.HouseSettings.SettingsData.MaxWidth + 1);
+        }
+    }
+
+    #endregion
+
     #region EditorCode
 
     #region ScriptableObjectSwappingLogic
@@ -182,6 +238,8 @@ public class HouseLine : MonoBehaviour
         LineSettingsDataCopy = new HouseLineSettingsData(LineSettings.SettingsData);
 
         UpdateLineMaterial();
+        
+        _houses.ForEach(h => h.ReInit(HouseSettings, HouseSettingsDataCopy));
     }
 
     private void UpdateHouseSettings()
@@ -346,8 +404,8 @@ public class HouseLine : MonoBehaviour
             HouseSettingsDataCopy.MinHeight = overrideSettingsData.MinHeight;
         else if (fieldInfo.Name == nameof(HouseSettingsDataCopy.MaxHeight))
             HouseSettingsDataCopy.MaxHeight = overrideSettingsData.MaxHeight;
-        else if (fieldInfo.Name == nameof(HouseSettingsDataCopy.Depth))
-            HouseSettingsDataCopy.Depth = overrideSettingsData.Depth;
+        else if (fieldInfo.Name == nameof(HouseSettingsDataCopy.MaxDepth))
+            HouseSettingsDataCopy.MaxDepth = overrideSettingsData.MaxDepth;
 
         if (fieldInfo.Name == nameof(HouseSettingsDataCopy.MinHeight) ||
             fieldInfo.Name == nameof(HouseSettingsDataCopy.MaxHeight))
